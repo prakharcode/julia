@@ -80,7 +80,13 @@ let a = rand(3, 5),
 end
 
 # issue #14027
-@test isnull(deepcopy(Nullable{Array}()))
+struct Nullable14027{T}
+    hasvalue::Bool
+    value::T
+
+    Nullable14027{T}() where {T} = new(false)
+end
+@test !deepcopy(Nullable14027{Array}()).hasvalue
 
 # issue #15250
 let a1 = Core.svec(1, 2, 3, []),
