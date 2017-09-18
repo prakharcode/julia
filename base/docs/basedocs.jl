@@ -22,36 +22,77 @@ by its name, e.g. `?cos`, or `?@time`, and press enter.
 kw"help", kw"?", kw"julia"
 
 """
-`using` will load the given module or package and make some of its names available for
-use (see also `export`). For example:
+    using Foo
 
-    using Gadfly
+`using Foo` will load the module or package `Foo` and make its [`export`](@ref)ed names
+available for direct use. Names can also be used via dot syntax, whether they are
+`export`ed or not. See also [`import`](@ref) and [`export`](@ref).
 
-loads the plotting package, Gadfly, so that the `plot` function can be used.
+# Examples
+```jldoctest
+julia> module Foo
+       export foo
+       foo() = 1
+       bar() = 2
+       end
+Foo
 
-Names can be used via dot syntax, whether they are exported or not:
+julia> using .Foo
 
-    Gadfly.plot(...)
+julia> Foo.foo()
+1
 
-If you don't want to use the packages exports directly, see also `import`. If you're not
-sure, `using` is almost definitely what you want.
+julia> foo()
+1
+
+julia> Foo.bar()
+2
+
+julia> bar()
+ERROR: UndefVarError: bar not defined
+```
 """
 kw"using"
 
 """
-    import Gadfly
+    import Foo
 
-`import`, like `using`, will load modules and packages for use. Unlike `using`, however,
-it will *not* make any `export`ed names available for use. To use Gadfly's `plot`
-function after importing it, for example, you have to write:
+`import Foo` will load the module or package `Foo`. Unlike [`using`](@ref), however,
+`import` will *not* make any `export`ed names available for use.
+See also [`using`](@ref) and [`export`](@ref).
 
-    Gadfly.plot(...)
+# Examples
+```jldoctest Fooimport
+julia> module Foo
+       export foo
+       foo() = 1
+       bar() = 2
+       end
+Foo
 
-Import can also be used with specific names, for example
+julia> import .Foo
 
-    import Gadfly: plot, render
+julia> Foo.foo()
+1
 
-This syntax is used when you want to extend the modules functions with new methods.
+julia> foo()
+ERROR: UndefVarError: foo not defined
+
+julia> Foo.bar()
+2
+```
+
+To extend a function, from another module, with a new method, it needs to be `import`ed.
+To extend `foo` and `bar` from the `Foo` module we can do either of the following:
+
+```jldoctest Fooimport
+julia> Foo.foo(x) = x + 1
+
+julia> import Foo: bar
+
+julia> bar(x) = x + 2
+bar (generic function with 2 methods)
+```
 """
 kw"import"
 
@@ -644,6 +685,14 @@ kw"struct"
 to be set after construction. See `struct` and the manual for more information.
 """
 kw"mutable struct"
+
+"""
+    new
+
+Special function available to inner constructors only.
+See the manual section on [Inner Constructor Methods](@ref) for more information.
+"""
+kw"new"
 
 """
 The `where` keyword creates a type that is an iterated union of other types, over all
