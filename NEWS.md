@@ -468,6 +468,12 @@ Deprecated or removed
   * The timing functions `tic`, `toc`, and `toq` are deprecated in favor of `@time` and `@elapsed`
     ([#17046]).
 
+  * Methods of `findfirst`, `findnext`, `findlast`, and `findprev` that accept a value to
+    search for are deprecated in favor of passing a predicate ([#19186], [#10593]).
+
+  * `find` functions now operate only on booleans by default. To look for non-zeros, use
+    `x->x!=0` or `!iszero` ([#23120]).
+
 Command-line option changes
 ---------------------------
 

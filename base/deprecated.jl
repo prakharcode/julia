@@ -1855,6 +1855,12 @@ end
     nothing
 end
 
+@deprecate find(x::Number)            find(!iszero, x)
+@deprecate findnext(A, v, i::Integer) findnext(equalto(v), A, i)
+@deprecate findfirst(A, v)            findfirst(equalto(v), A)
+@deprecate findprev(A, v, i::Integer) findprev(equalto(v), A, i)
+@deprecate findlast(A, v)             findlast(equalto(v), A)
+
 # END 0.7 deprecations
 
 # BEGIN 1.0 deprecations

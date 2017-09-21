@@ -1596,14 +1596,14 @@ cat(n::Integer, x::Integer...) = reshape([x...], (ntuple(x->1, n-1)..., length(x
 """
     findnext(A, i::Integer)
 
-Find the next linear index >= `i` of a non-zero element of `A`, or `0` if not found.
+Find the next linear index >= `i` of a true element of `A`, or `0` if not found.
 
 # Examples
 ```jldoctest
-julia> A = [0 0; 1 0]
-2×2 Array{Int64,2}:
- 0  0
- 1  0
+julia> A = [false false; true false]
+2×2 Array{Bool,2}:
+ false  false
+  true  false
 
 julia> findnext(A,1)
 2
@@ -1615,8 +1615,14 @@ julia> findnext(A,3)
 function findnext(A, start::Integer)
     l = endof(A)
     i = start
+    warned = false
     while i <= l
-        if A[i] != 0
+        a = A[i]
+        if !warned && !(a isa Bool)
+            depwarn("In the future `findnext` will only work on boolean collections. Use `findnext(x->x!=0, A)` instead.", :findnext)
+            warned = true
+        end
+        if a != 0
             return i
         end
         i = nextind(A, i)
@@ -1645,58 +1651,6 @@ julia> findfirst(zeros(3))
 ```
 """
 findfirst(A) = findnext(A, 1)
-
-"""
-    findnext(A, v, i::Integer)
-
-Find the next linear index >= `i` of an element of `A` equal to `v` (using `==`), or `0` if not found.
-
-# Examples
-```jldoctest
-julia> A = [1 4; 2 2]
-2×2 Array{Int64,2}:
- 1  4
- 2  2
-
-julia> findnext(A,4,4)
-0
-
-julia> findnext(A,4,3)
-3
-```
-"""
-function findnext(A, v, start::Integer)
-    l = endof(A)
-    i = start
-    while i <= l
-        if A[i] == v
-            return i
-        end
-        i = nextind(A, i)
-    end
-    return 0
-end
-"""
-    findfirst(A, v)
-
-Return the linear index of the first element equal to `v` in `A`.
-Returns `0` if `v` is not found.
-
-# Examples
-```jldoctest
-julia> A = [4 6; 2 2]
-2×2 Array{Int64,2}:
- 4  6
- 2  2
-
-julia> findfirst(A,2)
-2
-
-julia> findfirst(A,3)
-0
-```
-"""
-findfirst(A, v) = findnext(A, v, 1)
 
 """
     findnext(predicate::Function, A, i::Integer)
@@ -1754,14 +1708,14 @@ findfirst(testf::Function, A) = findnext(testf, A, 1)
 """
     findprev(A, i::Integer)
 
-Find the previous linear index <= `i` of a non-zero element of `A`, or `0` if not found.
+Find the previous linear index <= `i` of a true element of `A`, or `0` if not found.
 
 # Examples
 ```jldoctest
-julia> A = [0 0; 1 2]
-2×2 Array{Int64,2}:
- 0  0
- 1  2
+julia> A = [false false; true true]
+2×2 Array{Bool,2}:
+ false  false
+  true  true
 
 julia> findprev(A,2)
 2
@@ -1772,8 +1726,14 @@ julia> findprev(A,1)
 """
 function findprev(A, start::Integer)
     i = start
+    warned = false
     while i >= 1
-        A[i] != 0 && return i
+        a = A[i]
+        if !warned && !(a isa Bool)
+            depwarn("In the future `findprev` will only work on boolean collections. Use `findprev(x->x!=0, A)` instead.", :findprev)
+            warned = true
+        end
+        a != 0 && return i
         i = prevind(A, i)
     end
     return 0
@@ -1805,59 +1765,6 @@ julia> findlast(A)
 ```
 """
 findlast(A) = findprev(A, endof(A))
-
-"""
-    findprev(A, v, i::Integer)
-
-Find the previous linear index <= `i` of an element of `A` equal to `v` (using `==`), or `0` if not found.
-
-# Examples
-```jldoctest
-julia> A = [0 0; 1 2]
-2×2 Array{Int64,2}:
- 0  0
- 1  2
-
-julia> findprev(A, 1, 4)
-2
-
-julia> findprev(A, 1, 1)
-0
-```
-"""
-function findprev(A, v, start::Integer)
-    i = start
-    while i >= 1
-        A[i] == v && return i
-        i = prevind(A, i)
-    end
-    return 0
-end
-
-"""
-    findlast(A, v)
-
-Return the linear index of the last element equal to `v` in `A`.
-Returns `0` if there is no element of `A` equal to `v`.
-
-# Examples
-```jldoctest
-julia> A = [1 2; 2 1]
-2×2 Array{Int64,2}:
- 1  2
- 2  1
-
-julia> findlast(A,1)
-4
-
-julia> findlast(A,2)
-3
-
-julia> findlast(A,3)
-0
-```
-"""
-findlast(A, v) = findprev(A, v, endof(A))
 
 """
     findprev(predicate::Function, A, i::Integer)
@@ -1952,9 +1859,7 @@ _index_remapper(iter) = OneTo(typemax(Int))  # safe for objects that don't imple
 """
     find(A)
 
-Return a vector of the linear indexes of the non-zeros in `A` (determined by `A[i]!=0`). A
-common use of this is to convert a boolean array to an array of indexes of the `true`
-elements. If there are no non-zero elements of `A`, `find` returns an empty array.
+Return a vector of the linear indices of the true values in `A`.
 
 # Examples
 ```jldoctest
@@ -1968,7 +1873,7 @@ julia> find(A)
  1
  4
 
-julia> find(zeros(3))
+julia> find(falses(3))
 0-element Array{Int64,1}
 ```
 """
@@ -1977,7 +1882,12 @@ function find(A)
     I = Vector{Int}(nnzA)
     cnt = 1
     inds = _index_remapper(A)
+    warned = false
     for (i,a) in enumerate(A)
+        if !warned && !(a isa Bool)
+            depwarn("In the future `find(A)` will only work on boolean collections. Use `find(x->x!=0, A)` instead.", :find)
+            warned = true
+        end
         if a != 0
             I[cnt] = inds[i]
             cnt += 1
@@ -1986,7 +1896,7 @@ function find(A)
     return I
 end
 
-find(x::Number) = x == 0 ? Array{Int,1}(0) : [1]
+find(x::Bool) = x ? [1] : Array{Int,1}(0)
 find(testf::Function, x::Number) = !testf(x) ? Array{Int,1}(0) : [1]
 
 findn(A::AbstractVector) = find(A)
