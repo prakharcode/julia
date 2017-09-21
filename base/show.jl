@@ -266,7 +266,16 @@ function show_type_name(io::IO, tn::TypeName)
     elseif globfunc
         print(io, "typeof(")
     end
-    if isdefined(tn, :module) && !(is_exported_from_stdlib(sym, tn.module) || (tn.module === Main && !hidden))
+    # Print module prefix unless type is:
+    # - exported from standard library
+    # - reachable from Main (need to check the binding does not point to a different type)
+    # - defined in Main and not hidden
+    if isdefined(tn, :module) &&
+        !(is_exported_from_stdlib(sym, tn.module) ||
+          (isdefined(Main, sym) && (obj = getfield(Main, sym);
+           (obj isa DataType && obj.name.module === tn.module) ||
+           (obj isa UnionAll && unwrap_unionall(obj).name.module === tn.module))) ||
+          (tn.module === Main && !hidden))
         show(io, tn.module)
         if !hidden
             print(io, ".")
